@@ -46,17 +46,30 @@ genCorrTraits <- function(formula, data, traitNames, genIDName, subset = 1:dim(d
     for(tr2 in traitNames[(match(tr1, traitNames)+1):nTrait]){
       # get the genetic variances, just using plots where both traits were measured
       obsBothTrait <- !is.na(data[[tr1]]) & !is.na(data[[tr2]])
-      thismodel <- lmer(reformulate(termlabels = OriginalTerms, response = tr1), data = data,
-                        subset = obsBothTrait)
+      if(sum(obsBothTrait) == 0) next
+      tryCatch(thismodel <- lmer(reformulate(termlabels = OriginalTerms, response = tr1), data = data,
+                                 subset = obsBothTrait),
+               warning = function(w){
+                 print(paste("Warning for",tr1, "with", tr2))
+                 print(w)
+               })
       thisVC <- as.data.frame(VarCorr(thismodel))
       var1 <- thisVC$vcov[match(genIDName, thisVC$grp)]
-      thismodel <- lmer(reformulate(termlabels = OriginalTerms, response = tr2), data = data,
-                        subset = obsBothTrait)
+      tryCatch(thismodel <- lmer(reformulate(termlabels = OriginalTerms, response = tr2), data = data,
+                                 subset = obsBothTrait),
+               warning = function(w){
+                 print(paste("Warning for", tr2, "with", tr1))
+                 print(w)
+               })
       thisVC <- as.data.frame(VarCorr(thismodel))
       var2 <- thisVC$vcov[match(genIDName, thisVC$grp)]
       # now add the two variables together and get the genetic variance for the new trait
       data$Response <- data[[tr1]] + data[[tr2]]
-      thismodel <- lmer(reformulate(termlabels = OriginalTerms, response = "Response"), data = data)
+      tryCatch(thismodel <- lmer(reformulate(termlabels = OriginalTerms, response = "Response"), 
+                                 data = data),
+               warning = function(w){
+                 print(paste("Warning for", tr1, "+", tr2))
+               })
       thisVC <- as.data.frame(VarCorr(thismodel))
       var12 <- thisVC$vcov[match(genIDName, thisVC$grp)]
       # get the genetic covariance from these three variances
