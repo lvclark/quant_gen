@@ -1,6 +1,6 @@
 # Description
 
-This repository contains a R functions that I created for estimating genetic correlations.  Comments in file headers describe what to provide for each argument.  Before using this function, I suggest transforming the data if necessary to approximate a
+This repository contains a R functions that I created for estimating genetic correlations.  Comments in file headers describe what to provide for each argument.  Before using these functions, I suggest transforming the data if necessary to approximate a
 normal distribution.
 
 The function in genetic_correlation_traits.R estimates genetic correlations between traits measured
