@@ -69,6 +69,7 @@ genCorrTraits <- function(formula, data, traitNames, genIDName, subset = 1:dim(d
                                  data = data),
                warning = function(w){
                  print(paste("Warning for", tr1, "+", tr2))
+                 print(w)
                })
       thisVC <- as.data.frame(VarCorr(thismodel))
       var12 <- thisVC$vcov[match(genIDName, thisVC$grp)]
