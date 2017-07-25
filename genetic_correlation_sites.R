@@ -123,8 +123,8 @@ genCorrSites <- function(formula, data, genIDName, siteName, traitNames, subset 
           if(!trmName %in% names(grp1)){
             stop("Error matching terms for genotype interaction effects.")
           }
-          thiscoef1 <- grp1[termName]
-          thiscoef2 <- grp2[termName]
+          thiscoef1 <- grp1[trmName]
+          thiscoef2 <- grp2[trmName]
           intvar1 <- intvar1 + thisvar1/thiscoef1
           intvar2 <- intvar2 + thisvar2/thiscoef2
         }
