@@ -33,6 +33,9 @@ genCorrTraits <- function(formula, data, traitNames, genIDName, subset = 1:dim(d
   data <- data[subset,]
   nObs <- dim(data)[1]
   
+  # fill in variances along the diagonal only if there is no missing data at all
+  dovar <- !any(is.na(data[,traitNames]))
+  
   # manipulate formula to build new ones for linear models
   OriginalTerms <- attr(terms(formula), "term.labels")
   for(i in grep("|", OriginalTerms, fixed = TRUE)){ # fix formatting of random effects
@@ -47,22 +50,33 @@ genCorrTraits <- function(formula, data, traitNames, genIDName, subset = 1:dim(d
       # get the genetic variances, just using plots where both traits were measured
       obsBothTrait <- !is.na(data[[tr1]]) & !is.na(data[[tr2]])
       if(sum(obsBothTrait) == 0) next
-      tryCatch(thismodel <- lmer(reformulate(termlabels = OriginalTerms, response = tr1), data = data,
-                                 subset = obsBothTrait),
-               warning = function(w){
-                 print(paste("Warning for",tr1, "with", tr2))
-                 print(w)
-               })
-      thisVC <- as.data.frame(VarCorr(thismodel))
-      var1 <- thisVC$vcov[match(genIDName, thisVC$grp)]
-      tryCatch(thismodel <- lmer(reformulate(termlabels = OriginalTerms, response = tr2), data = data,
-                                 subset = obsBothTrait),
-               warning = function(w){
-                 print(paste("Warning for", tr2, "with", tr1))
-                 print(w)
-               })
-      thisVC <- as.data.frame(VarCorr(thismodel))
-      var2 <- thisVC$vcov[match(genIDName, thisVC$grp)]
+      if(dovar && !is.na(gencov[tr1, tr1])){
+        var1 <- gencov[tr1, tr1] # don't recalculate variance if already done
+      } else {
+        tryCatch(thismodel <- lmer(reformulate(termlabels = OriginalTerms, response = tr1), data = data,
+                                   subset = obsBothTrait),
+                 warning = function(w){
+                   print(paste("Warning for",tr1, "with", tr2))
+                   print(w)
+                 })
+        thisVC <- as.data.frame(VarCorr(thismodel))
+        var1 <- thisVC$vcov[match(genIDName, thisVC$grp)]
+        if(dovar) gencov[tr1, tr1] <- var1 # add variance to diagonal
+      }
+      if(dovar && !is.na(gencov[tr2, tr2])){
+        var2 <- gencov[tr2, tr2]
+      } else {
+        tryCatch(thismodel <- lmer(reformulate(termlabels = OriginalTerms, response = tr2), data = data,
+                                   subset = obsBothTrait),
+                 warning = function(w){
+                   print(paste("Warning for", tr2, "with", tr1))
+                   print(w)
+                 })
+        thisVC <- as.data.frame(VarCorr(thismodel))
+        var2 <- thisVC$vcov[match(genIDName, thisVC$grp)]
+        if(dovar) gencov[tr2, tr2] <- var2
+      }
+      
       # now add the two variables together and get the genetic variance for the new trait
       data$Response <- data[[tr1]] + data[[tr2]]
       tryCatch(thismodel <- lmer(reformulate(termlabels = OriginalTerms, response = "Response"), 
