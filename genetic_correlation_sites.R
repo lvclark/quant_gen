@@ -73,6 +73,7 @@ genCorrSites <- function(formula, data, genIDName, siteName, traitNames, subset 
     # loop through pairs of sites
     for(s1 in sites[-nSites]){
       for(s2 in sites[(match(s1, sites) + 1):nSites]){
+        message(paste("Evaluating", tr, "for", s1, "and", s2))
         # genotypes for which there is data for both sites for this trait
         theseGen <- dimnames(linemeansByTrait[[tr]])[[1]][!is.na(linemeansByTrait[[tr]][,s1]) &
                                                             !is.na(linemeansByTrait[[tr]][,s2])]
@@ -87,20 +88,10 @@ genCorrSites <- function(formula, data, genIDName, siteName, traitNames, subset 
           next
         }
         # run linear model to get variances
-        tryCatch(
         model1 <- lmer(reformulate(termlabels = OriginalTerms, response = tr),
-                       data = data, subset = subset1),
-        warning = function(w){
-          print(paste("Warning when estimating heritability for ", tr, s1, "with", s2))
-          print(w)
-        })
-        tryCatch(
+                       data = data, subset = subset1)
         model2 <- lmer(reformulate(termlabels = OriginalTerms, response = tr),
-                       data = data, subset = subset2),
-        warning = function(w){
-          print(paste("Warning when estimating heritability for ", tr, s2, "with", s1))
-          print(w)
-        })
+                       data = data, subset = subset2)
         grp1 <- ngrps(model1) # number of groups
         grp1 <- grp1[-grep(genIDName, names(grp1))] # eliminate genotype groups since we don't need those
         vc1 <- as.data.frame(VarCorr(model1)) # variances
